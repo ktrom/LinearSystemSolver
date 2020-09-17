@@ -1,35 +1,15 @@
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class CroutsAlgorithm {
     public static void main(String[] args) {
-
-        double[][] A = new double[][]{{11, 2, -5, 6, 48}, {1, 0, 17, 29, -21}, {-3, 4, 55, -61, 0}, {41, 97, -32, 47, 23}, {-6, 9, -4, -8, 50}};
-        double[] b1 = new double[]{4, 0, -7, -2, -11};
-        double[] b2 = new double[]{2, 77, -1003, -7, -10};
-        Decomposer p = new Decomposer(A);
-        p.LUdecomp();
-
+        Decomposer p = new Decomposer();
+        p.printLUDecomp();
         double[][] L = p.getL();
         double[][] U = p.getU();
-
-        LinearEquationSolver l1 = new LinearEquationSolver(b1, L, U);
-        double[] y1 = l1.getY();
-        double[] x1 = l1.getX();
-        LinearEquationSolver l2 = new LinearEquationSolver(b2, L, U);
-        double[] y2 = l2.getY();
-        double[] x2 = l2.getX();
-
+        LinearEquationSolver l = new LinearEquationSolver(L, U);
         System.out.println();
-        System.out.println("   x1" + " " + "    y1");
-        for(int i = 0; i < y1.length; i++){
-            System.out.println(Decomposer.formattedDouble(x1[i]) + " " + Decomposer.formattedDouble(y1[i]));
-        }
-        System.out.println();
-        System.out.println("   x2" + " " + "    y2");
-        for(int i = 0; i < y2.length; i++){
-            System.out.println(Decomposer.formattedDouble(x2[i]) + " " + Decomposer.formattedDouble(y2[i]));
-        }
-
+        System.out.println(l.toString());
     }
 }
 
@@ -40,12 +20,29 @@ class Decomposer {
     int n;
 
     public Decomposer() {
-
+        getValues();
+        LUdecomp();
     }
 
     public Decomposer(double[][] A) {
         this.A = A;
         n = A.length;
+        L = new double[n][n];
+        U = new double[n][n];
+    }
+
+    public void getValues(){
+        Scanner scan = new Scanner(System.in);
+        System.out.println("What is the dimension of your matrix?");
+        n = scan.nextInt();
+        A = new double[n][n];
+        for(int i = 0; i < n; i++){
+            for(int j = 0; j < n; j++){
+                System.out.println("What is the value at location (" + (i+1) + ", " + (j+1) + ")?");
+                A[i][j] = scan.nextDouble();
+            }
+        }
+
         L = new double[n][n];
         U = new double[n][n];
     }
@@ -69,26 +66,32 @@ class Decomposer {
             setUValues(j);
             setLValues(j);
         }
-        printLUDecomp();
     }
 
     public static String formattedDouble(double d) {
         return String.format("%.4f", d);
     }
 
-    private void printLUDecomp() {
+    public void printLUDecomp() {
+        System.out.println(toString());
+    }
+
+    @Override
+    public String toString(){
+        String str = "";
         for (int j = 0; j < n; j++) {
-            System.out.print("| ");
+            str += ("| ");
             for (int i = 0; i < n; i++) {
-                System.out.print(formattedDouble(L[j][i]) + " ");
+                str+=(formattedDouble(L[j][i]) + " ");
             }
-            System.out.print("| ");
-            System.out.print("| ");
+           str+=("| ");
+           str+=("| ");
             for (int i = 0; i < n; i++) {
-                System.out.print(formattedDouble(U[j][i]) + " ");
+               str+=(formattedDouble(U[j][i]) + " ");
             }
-            System.out.println("|");
+           str+=("|\n");
         }
+        return str;
     }
 
     private void switchRows(int i, int j) {
@@ -150,13 +153,6 @@ class Decomposer {
         return sum;
     }
 
-    private double epsilonSum3(int i, int j) {
-        double sum = 0;
-        for (int k = 0; k <= j; k++) {
-            sum += A[i][k] * U[k][j];
-        }
-        return sum;
-    }
 }
 
 class Resulter extends ArrayList<Double> {
@@ -192,13 +188,30 @@ class Resulter extends ArrayList<Double> {
 }
 
 class LinearEquationSolver {
-    private final double[] b;
-    private final double[][] L;
-    private final double[][] U;
+    private double[] b;
+    private double[][] L;
+    private double[][] U;
     private double[] y;
     private double[] x;
-    private final int n;
+    private int n;
 
+    public LinearEquationSolver(double[][] L, double[][] U){
+        this.L = L;
+        this.U = U;
+        getValues();
+    }
+
+    private void getValues(){
+        Scanner scan = new Scanner(System.in);
+        System.out.println("What is your solution column vector?");
+        n = L.length;
+        b = new double[n];
+        for(int i = 0; i < L.length; i++){
+            System.out.println("Dimension " + (i + 1) + ":");
+            b[i] = scan.nextDouble();
+        }
+        scan.close();
+    }
     public LinearEquationSolver(double[] b, double[][] L, double[][] U) {
         this.b = b;
         this.L = L;
@@ -208,6 +221,17 @@ class LinearEquationSolver {
         x = null;
     }
 
+    @Override
+    public String toString(){
+        if(x == null)
+            getX();
+        String str = "";
+        System.out.println("   x " + " " + "    y ");
+        for(int i = 0; i < n; i++){
+            str+= (Decomposer.formattedDouble(x[i]) + " " + Decomposer.formattedDouble(y[i]) + "\n");
+        }
+        return str;
+    }
     // In the case Ly = b
     private double[] forwardSubstitution() {
         y = new double[n];
